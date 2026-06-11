@@ -8,8 +8,7 @@
 # production
 /build
 
-# database
-*.db
+# database (verbivore.db itself is committed so deployments ship with the dev data)
 *.db-shm
 *.db-wal
 
