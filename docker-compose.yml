@@ -1,0 +1,16 @@
+services:
+  verbivore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: verbivore
+    restart: unless-stopped
+    ports:
+      - "777:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URI: file:/app/data/verbivore.db
+      PAYLOAD_SECRET: verbivore-secret-change-in-production
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - ./verbivore.db:/app/data/verbivore.db

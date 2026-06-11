@@ -1,0 +1,30 @@
+{
+  "name": "verbivore-next",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "generate:types": "payload generate:types",
+    "generate:importmap": "payload generate:importmap"
+  },
+  "dependencies": {
+    "@payloadcms/db-sqlite": "^3.84.1",
+    "@payloadcms/next": "^3.84.1",
+    "graphql": "^16.8.1",
+    "next": "16.2.6",
+    "payload": "^3.84.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-simple-maps": "^3.0.0",
+    "sharp": "^0.32.6",
+    "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.0.0"
+  }
+}
