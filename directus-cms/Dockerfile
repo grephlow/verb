@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 make g+
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
+# The prebuilt sqlite3 binary requires a newer glibc than bookworm ships —
+# rebuild it from source against this image's glibc.
+RUN npm rebuild sqlite3 --build-from-source
+
 COPY extensions ./extensions
 
 ENV HOST=0.0.0.0
