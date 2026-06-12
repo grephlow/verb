@@ -45,7 +45,7 @@ export default async function FAQPage() {
                           {item.question}
                           <span>+</span>
                         </button>
-                        <div className="faq-a">{item.answer}</div>
+                        <div className="faq-a" dangerouslySetInnerHTML={{ __html: item.answer }} />
                       </div>
                     ))}
                   </div>

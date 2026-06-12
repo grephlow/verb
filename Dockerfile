@@ -13,8 +13,6 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-ENV DATABASE_URI=file:/tmp/build.db
-ENV PAYLOAD_SECRET=build-secret
 
 RUN npm run build
 
@@ -41,10 +39,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.ts ./next.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json  ./tsconfig.json
 COPY --from=builder --chown=nextjs:nodejs /app/src            ./src
-
-# Persistent data dirs
-RUN mkdir -p /app/data /app/public/uploads && \
-    chown -R nextjs:nodejs /app/data /app/public/uploads
 
 USER nextjs
 EXPOSE 3000

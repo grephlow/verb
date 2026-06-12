@@ -1,16 +1,47 @@
+# Production / "enterprise" stack — builds optimized images for both services.
+# SQLite-backed Directus, persisted via bind mounts so data survives rebuilds.
+#
+# Copy .env.example to .env and adjust DIRECTUS_* values for a real deployment
+# (PUBLIC_URL, KEY, SECRET, ADMIN_EMAIL, ADMIN_PASSWORD).
+#
+#   docker compose up -d --build
+
 services:
-  verbivore:
+  directus:
+    build:
+      context: ./directus-cms
+    container_name: verbivore-directus
+    restart: unless-stopped
+    ports:
+      - "8055:8055"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8055"
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
+      KEY: ${DIRECTUS_KEY:-e0465325-199a-4641-a2e1-3c59b4f104d0}
+      SECRET: ${DIRECTUS_SECRET:-e72d9e94-4efb-4dcb-aec2-e9d2f47e28ad}
+      DB_CLIENT: sqlite3
+      DB_FILENAME: /directus/verbivore.db
+      ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL:-admin@verbivore.org}
+      ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD:-admin123}
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "true"
+    volumes:
+      - ./directus-cms/verbivore.db:/directus/verbivore.db
+      - ./directus-cms/uploads:/directus/uploads
+      - ./directus-cms/extensions:/directus/extensions
+
+  web:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: verbivore
+    container_name: verbivore-web
     restart: unless-stopped
+    depends_on:
+      - directus
     ports:
-      - "777:3000"
+      - "3000:3000"
     environment:
       NODE_ENV: production
-      DATABASE_URI: file:/app/data/verbivore.db
-      PAYLOAD_SECRET: verbivore-secret-change-in-production
       NEXT_TELEMETRY_DISABLED: "1"
-    volumes:
-      - ./verbivore.db:/app/data/verbivore.db
+      DIRECTUS_URL: http://directus:8055

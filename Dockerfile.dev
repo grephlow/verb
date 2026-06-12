@@ -1,0 +1,11 @@
+# Dev image — runs `next dev` with the source mounted as a volume for hot reload.
+FROM node:20-alpine
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps
+
+ENV NEXT_TELEMETRY_DISABLED=1
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

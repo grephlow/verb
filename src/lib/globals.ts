@@ -1,16 +1,4 @@
-import { getPayload } from "payload"
-import configPromise from "@payload-config"
-
-async function fetchGlobal(slug: string) {
-  const payload = await getPayload({ config: configPromise })
-  return payload.findGlobal({ slug, depth: 2 }) as Promise<any>
-}
-
-async function fetchCollection(collection: string, opts: { sort?: string; limit?: number; depth?: number; where?: any } = {}) {
-  const payload = await getPayload({ config: configPromise })
-  const { docs } = await payload.find({ collection, ...opts } as any)
-  return docs
-}
+import { directusFetch, fileUrl } from './directus'
 
 /* ── Defaults ────────────────────────────────────────────────── */
 
@@ -71,99 +59,228 @@ export const EDITIONS_PAGE_DEFAULTS = {
   statsAlumni: '500+',
 }
 
+export const SAMPLE_QUESTIONS_PAGE_DEFAULTS = {
+  heroTitle: 'Nümunə Suallar və Sillabus',
+  heroSubtitle: 'Verbivore müsabiqəsinin mərhələlərinə uyğun nümunə suallar və sillabus sənədlərini buradan yükləyə bilərsiniz. Resurslar mərhələ və kateqoriyalar üzrə strukturlaşdırılmışdır.',
+  sampleSectionTitle: 'Nümunə suallar',
+  sampleSectionText: 'Aşağıdakı mərhələlərdən birini seçin. Kateqoriyaya daxil olaraq mövcud PDF nümunələrini yükləyə bilərsiniz.',
+  categoryChips: [] as any[],
+  topicTags: [] as string[],
+  syllabusSectionTitle: 'Sillabus',
+  syllabusSectionText: 'Hər mərhələ üzrə kateqoriyanı seçərək həmin kateqoriyaya aid sillabus PDF sənədini yükləyə bilərsiniz.',
+  syllabusBadge: 'Yüklənə bilən PDF',
+  syllabusStructure: [] as string[],
+  usageSteps: [] as string[],
+  stagesList: [] as string[],
+  categoriesList: [] as string[],
+}
+
+export const PRELIMINARY_PAGE_DEFAULTS = {
+  heroTitle: 'Preliminary Round',
+  heroSubtitle: 'The first stage of Verbivore. Held in schools across all participating countries, the Preliminary Round is open to all registered students.',
+  howItWorksTitle: 'How it works',
+  howItWorksSubtitle: 'Preliminary Round mərhələsinin əsas proses xəritəsi.',
+  steps: [] as any[],
+  keyInfoTitle: '📋 Key Info',
+  keyInfo: [] as any[],
+  topicsTitle: '🎯 Topics tested',
+  topicTags: [] as string[],
+  sampleQuestionsTitle: 'Nümunə suallar',
+  sampleQuestionsText: 'Valideyn və şagird müvafiq mərhələni, sonra kateqoriyanı seçərək PDF nümunələrini açıb yükləyə bilər.',
+  syllabusTitle: 'Sillabus',
+  syllabusText: 'Hər mərhələ üzrə kateqoriya açılır və uyğun sillabus PDF-i yüklənir.',
+  resultsTitle: 'Nəticələr',
+  resultsText: 'Bu bölmə yalnız Preliminary Round nəticələri üçündür. İstifadəçi ölkə adına klikləyərək həmin ölkəyə aid PDF nəticəni yükləyə bilər.',
+}
+
+export const NATIONAL_FINAL_PAGE_DEFAULTS = {
+  heroTitle: 'National Final',
+  heroSubtitle: 'The second stage of Verbivore. Top scorers from the Preliminary Round compete in a country-level final, qualifying the best for the Grand Final.',
+  howItWorksTitle: 'How it works',
+  howItWorksSubtitle: 'National Final mərhələsinin əsas proses xəritəsi.',
+  steps: [] as any[],
+  keyInfoTitle: '📋 Key Info',
+  keyInfo: [] as any[],
+  awardsTitle: '🏅 Awards',
+  awardTags: [] as string[],
+  sampleQuestionsTitle: 'Nümunə suallar',
+  sampleQuestionsText: 'National Final üçün hazırlıq nümunə sualları. Kateqoriyanı seçib müvafiq PDF-i açın.',
+  syllabusTitle: 'Sillabus',
+  syllabusText: 'National Final üçün kateqoriya sillabusları. Hər kateqoriya üçün PDF-i yükləyə bilərsiniz.',
+  resultsTitle: 'Nəticələr',
+  resultsText: 'Bu bölmə yalnız National Final nəticələri üçündür. Ölkə adına klikləyərək PDF nəticəni yükləyə bilərsiniz.',
+}
+
 /* ── Globals ─────────────────────────────────────────────────── */
 
 export async function getSiteSettings() {
-  try { return { ...SITE_DEFAULTS, ...await fetchGlobal("site-settings") } } catch { return SITE_DEFAULTS }
+  try {
+    const data = await directusFetch('/items/site_settings')
+    return { ...SITE_DEFAULTS, ...data, showScientificCommittee: !!data.showScientificCommittee }
+  } catch { return SITE_DEFAULTS }
 }
 
 export async function getHomePage() {
-  try { return { ...HOME_DEFAULTS, ...await fetchGlobal("home-page") } } catch { return HOME_DEFAULTS }
+  try {
+    const data = await directusFetch('/items/home_page')
+    return { ...HOME_DEFAULTS, ...data, heroImage: fileUrl(data.heroImage) }
+  } catch { return HOME_DEFAULTS }
 }
 
 export async function getContactPage() {
-  try { return { ...CONTACT_DEFAULTS, ...await fetchGlobal("contact-page") } } catch { return CONTACT_DEFAULTS }
+  try { return { ...CONTACT_DEFAULTS, ...await directusFetch('/items/contact_page') } } catch { return CONTACT_DEFAULTS }
 }
 
 export async function getAboutPage() {
-  try { return { ...ABOUT_DEFAULTS, ...await fetchGlobal("about-page") } } catch { return ABOUT_DEFAULTS }
+  try { return { ...ABOUT_DEFAULTS, ...await directusFetch('/items/about_page') } } catch { return ABOUT_DEFAULTS }
 }
 
 export async function getEditionsPage() {
-  try { return { ...EDITIONS_PAGE_DEFAULTS, ...await fetchGlobal("editions-page") } } catch { return EDITIONS_PAGE_DEFAULTS }
+  try {
+    const data = await directusFetch('/items/editions_page')
+    return { ...EDITIONS_PAGE_DEFAULTS, ...data, heroImage: fileUrl(data.heroImage) }
+  } catch { return EDITIONS_PAGE_DEFAULTS }
+}
+
+export async function getSampleQuestionsPage() {
+  try { return { ...SAMPLE_QUESTIONS_PAGE_DEFAULTS, ...await directusFetch('/items/sample_questions_page') } } catch { return SAMPLE_QUESTIONS_PAGE_DEFAULTS }
+}
+
+export async function getPreliminaryPage() {
+  try { return { ...PRELIMINARY_PAGE_DEFAULTS, ...await directusFetch('/items/preliminary_page') } } catch { return PRELIMINARY_PAGE_DEFAULTS }
+}
+
+export async function getNationalFinalPage() {
+  try { return { ...NATIONAL_FINAL_PAGE_DEFAULTS, ...await directusFetch('/items/national_final_page') } } catch { return NATIONAL_FINAL_PAGE_DEFAULTS }
 }
 
 /* ── Collections ─────────────────────────────────────────────── */
 
 export async function getNewsItems() {
-  try { return await fetchCollection('news', { sort: '-createdAt', limit: 100, depth: 1 }) } catch { return [] }
+  try {
+    const data = await directusFetch('/items/news?fields=*&sort=-id&limit=100')
+    return data.map((n: any) => ({
+      ...n,
+      text: n.title,
+      published: n.status === 'published',
+      image: fileUrl(n.image),
+    }))
+  } catch { return [] }
 }
 
 export async function getPartners() {
-  try { return await fetchCollection('partners', { sort: 'order', limit: 10, depth: 2 }) } catch { return [] }
+  try {
+    const data = await directusFetch('/items/partners?fields=*&sort=order&limit=10')
+    return data.map((p: any) => ({ ...p, logo: fileUrl(p.logo) }))
+  } catch { return [] }
 }
 
 export async function getGallery() {
-  try { return await fetchCollection('gallery', { sort: 'order', limit: 20, depth: 2 }) } catch { return [] }
+  try {
+    const data = await directusFetch('/items/gallery?fields=*&sort=sort&limit=20')
+    return data.map((g: any) => ({
+      ...g,
+      image: fileUrl(g.image),
+      videoFile: fileUrl(g.video_file),
+      videoUrl: g.video_url,
+      mediaType: g.media_type,
+    }))
+  } catch { return [] }
 }
 
 export async function getFaqItems() {
-  try { return await fetchCollection('faq', { sort: 'order', limit: 100 }) } catch { return [] }
+  try { return await directusFetch('/items/faq?fields=*&sort=sort&limit=100') } catch { return [] }
 }
 
 export async function getRegulations() {
-  try { return await fetchCollection('regulations', { sort: 'order', limit: 50 }) } catch { return [] }
+  try { return await directusFetch('/items/regulations?fields=*&sort=order&limit=50') } catch { return [] }
 }
 
 export async function getCountries() {
-  try { return await fetchCollection('countries', { sort: 'order', limit: 50 }) } catch { return [] }
+  try { return await directusFetch('/items/countries?fields=*&sort=order&limit=50') } catch { return [] }
 }
 
 export async function getCommittee() {
-  try { return await fetchCollection('committee', { sort: 'order', limit: 50, depth: 2 }) } catch { return [] }
+  try {
+    const data = await directusFetch('/items/committee?fields=*,country.*&sort=order&limit=50')
+    return data.map((m: any) => ({ ...m, photo: fileUrl(m.photo) }))
+  } catch { return [] }
 }
 
 export async function getExamTimes() {
-  try { return await fetchCollection('exam-times', { sort: 'order', limit: 50, depth: 1 }) } catch { return [] }
+  try { return await directusFetch('/items/exam_times?fields=*,country.*&sort=order&limit=50') } catch { return [] }
 }
 
 export async function getEditions() {
-  try { return await fetchCollection('editions', { sort: 'order', limit: 50, depth: 2 }) } catch { return [] }
+  try {
+    const data = await directusFetch('/items/editions?fields=*,hostCountry.*&sort=order&limit=50')
+    return data.map(reshapeEdition)
+  } catch { return [] }
+}
+
+async function fetchPreliminaryResources(stage?: string) {
+  const filter = stage ? `&filter[stage][_eq]=${stage}` : ''
+  return directusFetch(`/items/preliminary_resources?fields=*,country.*&sort=order&limit=1000${filter}`)
 }
 
 export async function getPreliminaryResources() {
-  try { return await fetchCollection('preliminary-resources', { sort: 'order', limit: 500, depth: 1, where: { stage: { equals: 'preliminary' } } }) } catch { return [] }
+  try { return await fetchPreliminaryResources('preliminary') } catch { return [] }
 }
 
 export async function getNationalFinalResources() {
-  try { return await fetchCollection('preliminary-resources', { sort: 'order', limit: 500, depth: 1, where: { stage: { equals: 'national-final' } } }) } catch { return [] }
+  try { return await fetchPreliminaryResources('national-final') } catch { return [] }
 }
 
 export async function getAllSampleResources() {
-  try { return await fetchCollection('preliminary-resources', { sort: 'order', limit: 1000, depth: 1 }) } catch { return [] }
+  try { return await fetchPreliminaryResources() } catch { return [] }
 }
 
 export async function getEditionBySlug(slug: string): Promise<any | null> {
   try {
-    const payload = await getPayload({ config: configPromise })
-    const { docs } = await payload.find({ collection: 'editions', where: { slug: { equals: slug } }, limit: 1, depth: 2 })
-    return docs[0] ?? null
+    const data = await directusFetch(`/items/editions?filter[slug][_eq]=${encodeURIComponent(slug)}&fields=*,hostCountry.*&limit=1`)
+    return data[0] ? reshapeEdition(data[0]) : null
   } catch { return null }
 }
 
 export async function getCategories() {
-  try { return await fetchCollection('categories', { sort: 'order', limit: 50, depth: 1 }) } catch { return [] }
+  try {
+    const data = await directusFetch('/items/categories?fields=*&sort=order&limit=50')
+    return data.map((c: any) => ({ ...c, coverImage: fileUrl(c.coverImage) }))
+  } catch { return [] }
 }
 
 export async function getCategoryBySlug(slug: string): Promise<any | null> {
   try {
-    const payload = await getPayload({ config: configPromise })
-    const { docs } = await payload.find({ collection: 'categories', where: { slug: { equals: slug } }, limit: 1, depth: 1 })
-    return docs[0] ?? null
+    const data = await directusFetch(`/items/categories?filter[slug][_eq]=${encodeURIComponent(slug)}&fields=*&limit=1`)
+    const c = data[0]
+    return c ? { ...c, coverImage: fileUrl(c.coverImage) } : null
   } catch { return null }
 }
 
 /* ── Helpers ─────────────────────────────────────────────────── */
+
+function reshapeEdition(ed: any) {
+  return {
+    ...ed,
+    image: fileUrl(ed.image),
+    heroImage: fileUrl(ed.heroImage),
+    hostInstitution: {
+      name: ed.hostInstitutionName, website: ed.hostInstitutionWebsite,
+      description: ed.hostInstitutionDescription, description2: ed.hostInstitutionDescription2,
+      address: ed.hostInstitutionAddress, email: ed.hostInstitutionEmail, phone: ed.hostInstitutionPhone,
+    },
+    academicPartner: { name: ed.academicPartnerName, description: ed.academicPartnerDescription },
+    venuePartner: { name: ed.venuePartnerName, description: ed.venuePartnerDescription },
+    countryDelegations: (ed.countryDelegations || []).map((d: any) => ({
+      ...d,
+      country: { id: d.countryName, name: d.countryName, flag: d.countryFlag },
+    })),
+    medalTable: (ed.medalTable || []).map((m: any) => ({
+      ...m,
+      country: { id: m.countryName, name: m.countryName, flag: m.countryFlag },
+    })),
+  }
+}
 
 export function editionHost(ed: any): { name: string; flag: string } {
   if (ed?.hostCountry && typeof ed.hostCountry === 'object') {

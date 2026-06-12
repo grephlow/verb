@@ -1,0 +1,46 @@
+# Local dev stack — containerized Directus (SQLite, same dev data as
+# `directus-cms/verbivore.db`) + Next.js with hot reload via bind mounts.
+#
+#   docker compose -f docker-compose.dev.yml up --build
+
+services:
+  directus:
+    build:
+      context: ./directus-cms
+    container_name: verbivore-directus-dev
+    ports:
+      - "8055:8055"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8055"
+      PUBLIC_URL: http://localhost:8055
+      KEY: e0465325-199a-4641-a2e1-3c59b4f104d0
+      SECRET: e72d9e94-4efb-4dcb-aec2-e9d2f47e28ad
+      DB_CLIENT: sqlite3
+      DB_FILENAME: /directus/verbivore.db
+      ADMIN_EMAIL: admin@verbivore.org
+      ADMIN_PASSWORD: admin123
+      CORS_ENABLED: "true"
+      CORS_ORIGIN: "true"
+    volumes:
+      - ./directus-cms/verbivore.db:/directus/verbivore.db
+      - ./directus-cms/uploads:/directus/uploads
+      - ./directus-cms/extensions:/directus/extensions
+      - ./directus-cms/seed:/directus/seed
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: verbivore-web-dev
+    depends_on:
+      - directus
+    ports:
+      - "3000:3000"
+    environment:
+      DIRECTUS_URL: http://directus:8055
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./next.config.ts:/app/next.config.ts

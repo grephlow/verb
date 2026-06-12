@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getAllSampleResources } from '@/lib/globals'
+import { getAllSampleResources, getSampleQuestionsPage } from '@/lib/globals'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Nümunə Suallar və Sillabus | Verbivore The Contest' }
@@ -23,11 +23,31 @@ function groupByRound(items: any[]): RoundGroup[] {
   return Object.values(map).sort((a, b) => STAGE_ORDER.indexOf(a._stageKey) - STAGE_ORDER.indexOf(b._stageKey))
 }
 
+const DEFAULT_CATEGORY_CHIPS = [
+  { icon: '📂', label: 'Kiçik A' },
+  { icon: '📂', label: 'Kiçik B' },
+  { icon: '📂', label: 'Orta' },
+  { icon: '📂', label: 'Böyük' },
+]
+const DEFAULT_TOPIC_TAGS = ['Lüğət', 'Oxu', 'Qrammatika', 'Məntiq', 'İdiomlar', 'Söz əmələ gəlməsi']
+const DEFAULT_STAGES_LIST = ['İlkin seçim mərhələsi', 'Milli final mərhələsi', 'Grand Final mərhələsi']
+const DEFAULT_CATEGORIES_LIST = ['Kiçik A — 3–4-cü sinif', 'Kiçik B — 5–6-cı sinif', 'Orta səviyyə — 7–8-ci sinif', 'Böyük — 9–11-ci sinif']
+const DEFAULT_SYLLABUS_STRUCTURE = ['İlkin seçim üçün mövzu bölgüsü', 'Milli final üçün dərinləşdirilmiş istiqamətlər', 'Grand Final üçün genişləndirilmiş proqram']
+const DEFAULT_USAGE_STEPS = ['Mərhələ seçilir', 'Kateqoriya açılır', 'Uyğun PDF yüklənir']
+
 export default async function SampleQuestionsPage() {
   const docs = await getAllSampleResources()
+  const sp = await getSampleQuestionsPage()
 
   const sampleGroups   = groupByRound(docs.filter((d: any) => d.type === 'sample-question'))
   const syllabusGroups = groupByRound(docs.filter((d: any) => d.type === 'syllabus'))
+
+  const categoryChips     = sp.categoryChips?.length     > 0 ? sp.categoryChips     : DEFAULT_CATEGORY_CHIPS
+  const topicTags         = sp.topicTags?.length         > 0 ? sp.topicTags         : DEFAULT_TOPIC_TAGS
+  const stagesList        = sp.stagesList?.length        > 0 ? sp.stagesList        : DEFAULT_STAGES_LIST
+  const categoriesList    = sp.categoriesList?.length    > 0 ? sp.categoriesList    : DEFAULT_CATEGORIES_LIST
+  const syllabusStructure = sp.syllabusStructure?.length > 0 ? sp.syllabusStructure : DEFAULT_SYLLABUS_STRUCTURE
+  const usageSteps        = sp.usageSteps?.length        > 0 ? sp.usageSteps        : DEFAULT_USAGE_STEPS
 
   return (
     <>
@@ -39,8 +59,8 @@ export default async function SampleQuestionsPage() {
             <Link href="/verbivore">Verbivore</Link> <span>›</span>
             <span>Nümunə Suallar</span>
           </div>
-          <h1>Nümunə Suallar və Sillabus</h1>
-          <p>Verbivore müsabiqəsinin mərhələlərinə uyğun nümunə suallar və sillabus sənədlərini buradan yükləyə bilərsiniz. Resurslar mərhələ və kateqoriyalar üzrə strukturlaşdırılmışdır.</p>
+          <h1>{sp.heroTitle}</h1>
+          <p>{sp.heroSubtitle}</p>
         </div>
       </section>
 
@@ -59,13 +79,12 @@ export default async function SampleQuestionsPage() {
             {/* Mobile: quick-reference chips above the accordion */}
             <div className="mob-only" style={{ marginBottom: 16 }}>
               <div className="mob-res-chips">
-                <span className="mob-res-chip">📂 Kiçik A</span>
-                <span className="mob-res-chip">📂 Kiçik B</span>
-                <span className="mob-res-chip">📂 Orta</span>
-                <span className="mob-res-chip">📂 Böyük</span>
+                {categoryChips.map((c: any) => (
+                  <span key={c.label} className="mob-res-chip">{c.icon} {c.label}</span>
+                ))}
               </div>
               <div className="prelim-topic-tags">
-                {['Lüğət','Oxu','Qrammatika','Məntiq','İdiomlar','Söz əmələ gəlməsi'].map(t => (
+                {topicTags.map((t: string) => (
                   <span key={t} className="prelim-topic-tag">{t}</span>
                 ))}
               </div>
@@ -75,8 +94,8 @@ export default async function SampleQuestionsPage() {
               <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ padding: '22px 26px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
                   <div>
-                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950, color: 'var(--navy-2)', letterSpacing: '-.3px' }}>Nümunə suallar</h2>
-                    <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.55 }}>Aşağıdakı mərhələlərdən birini seçin. Kateqoriyaya daxil olaraq mövcud PDF nümunələrini yükləyə bilərsiniz.</p>
+                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950, color: 'var(--navy-2)', letterSpacing: '-.3px' }}>{sp.sampleSectionTitle}</h2>
+                    <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.55 }}>{sp.sampleSectionText}</p>
                   </div>
                   <span className="res-badge">{sampleGroups.length} mərhələ</span>
                 </div>
@@ -91,24 +110,19 @@ export default async function SampleQuestionsPage() {
                   <div className="panel">
                     <h3>📌 Mərhələlər</h3>
                     <ul className="res-side-list">
-                      <li>İlkin seçim mərhələsi</li>
-                      <li>Milli final mərhələsi</li>
-                      <li>Grand Final mərhələsi</li>
+                      {stagesList.map((s: string) => <li key={s}>{s}</li>)}
                     </ul>
                   </div>
                   <div className="panel">
                     <h3>📂 Kateqoriyalar</h3>
                     <ul className="res-side-list">
-                      <li>Kiçik A — 3–4-cü sinif</li>
-                      <li>Kiçik B — 5–6-cı sinif</li>
-                      <li>Orta səviyyə — 7–8-ci sinif</li>
-                      <li>Böyük — 9–11-ci sinif</li>
+                      {categoriesList.map((c: string) => <li key={c}>{c}</li>)}
                     </ul>
                   </div>
                   <div className="panel">
                     <h3>🎯 Əhatə olunan istiqamətlər</h3>
                     <div className="prelim-topic-tags" style={{ marginTop: 4 }}>
-                      {['Lüğət','Oxu','Qrammatika','Məntiq','İdiomlar','Söz əmələ gəlməsi'].map(t => (
+                      {topicTags.map((t: string) => (
                         <span key={t} className="prelim-topic-tag">{t}</span>
                       ))}
                     </div>
@@ -124,9 +138,7 @@ export default async function SampleQuestionsPage() {
             <div className="mob-only panel mob-info-panel" style={{ marginBottom: 16 }}>
               <h3>✅ Sillabus strukturu</h3>
               <ul className="res-side-list">
-                <li>İlkin seçim üçün mövzu bölgüsü</li>
-                <li>Milli final üçün dərinləşdirilmiş istiqamətlər</li>
-                <li>Grand Final üçün genişləndirilmiş proqram</li>
+                {syllabusStructure.map((s: string) => <li key={s}>{s}</li>)}
               </ul>
             </div>
             <div className="res-grid">
@@ -134,10 +146,10 @@ export default async function SampleQuestionsPage() {
               <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ padding: '22px 26px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
                   <div>
-                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950, color: 'var(--navy-2)', letterSpacing: '-.3px' }}>Sillabus</h2>
-                    <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.55 }}>Hər mərhələ üzrə kateqoriyanı seçərək həmin kateqoriyaya aid sillabus PDF sənədini yükləyə bilərsiniz.</p>
+                    <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950, color: 'var(--navy-2)', letterSpacing: '-.3px' }}>{sp.syllabusSectionTitle}</h2>
+                    <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.55 }}>{sp.syllabusSectionText}</p>
                   </div>
-                  <span className="res-badge">Yüklənə bilən PDF</span>
+                  <span className="res-badge">{sp.syllabusBadge}</span>
                 </div>
                 <div style={{ padding: 16 }}>
                   <ResourceAccordion groups={syllabusGroups} />
@@ -150,17 +162,13 @@ export default async function SampleQuestionsPage() {
                   <div className="panel">
                     <h3>✅ Sillabus strukturu</h3>
                     <ul className="res-side-list">
-                      <li>İlkin seçim üçün mövzu bölgüsü</li>
-                      <li>Milli final üçün dərinləşdirilmiş istiqamətlər</li>
-                      <li>Grand Final üçün genişləndirilmiş proqram</li>
+                      {syllabusStructure.map((s: string) => <li key={s}>{s}</li>)}
                     </ul>
                   </div>
                   <div className="panel">
                     <h3>ℹ️ İstifadə qaydası</h3>
                     <ul className="res-side-list">
-                      <li>Mərhələ seçilir</li>
-                      <li>Kateqoriya açılır</li>
-                      <li>Uyğun PDF yüklənir</li>
+                      {usageSteps.map((s: string) => <li key={s}>{s}</li>)}
                     </ul>
                   </div>
                 </aside>

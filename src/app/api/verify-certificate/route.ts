@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import configPromise from '@payload-config'
+import { directusFetch } from '@/lib/directus'
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')?.trim().toUpperCase()
@@ -9,13 +8,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const payload = await getPayload({ config: configPromise })
-    const { docs } = await payload.find({
-      collection: 'certificates',
-      where: { code: { equals: code } },
-      limit: 1,
-      depth: 1,
-    })
+    const docs = await directusFetch(`/items/certificates?filter[code][_eq]=${encodeURIComponent(code)}&fields=*,country.*&limit=1`)
 
     if (!docs[0]) {
       return NextResponse.json({ found: false })

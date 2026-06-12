@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getEditionBySlug } from '@/lib/globals'
 import { EditionTabs } from '@/components/EditionTabs'
+import { Icon, IconBadge } from '@/components/Icon'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,37 @@ const DAY_COLORS = [
   'linear-gradient(135deg,#1a7a3a,#2ca05a)',
   'linear-gradient(135deg,#555,#333)',
 ]
-const DAY_EMOJIS = ['✈️', '🌅', '📝', '🎉', '🛫']
+const DAY_EMOJIS = ['✈️', '🎫', '📝', '🏆', '🛫']
+
+function DayIcon({ day, di, size, className, badge }: { day: any; di: number; size: number; className?: string; badge?: boolean }) {
+  const color = day.color || '#333'
+  const emoji = DAY_EMOJIS[di] ?? '📅'
+
+  if (badge) {
+    if (day.icon) return <IconBadge name={day.icon} color={color} size={size} className={className} />
+    const dim = Math.round(size * 1.7)
+    return (
+      <div className={className} style={{ width: dim, height: dim, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: size, boxShadow: '0 4px 12px rgba(0,0,0,.12)' }}>
+        {emoji}
+      </div>
+    )
+  }
+
+  if (day.icon) return <Icon name={day.icon} size={size} color={color} className={className} style={{ verticalAlign: 'middle' }} />
+  return <span className={className}>{emoji}</span>
+}
+
+function dayGradient(day: any, di: number): string {
+  if (day.color) {
+    const hex = day.color.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+    const shade = (v: number) => Math.round(v * 0.78).toString(16).padStart(2, '0')
+    return `linear-gradient(135deg, ${day.color}, #${shade(r)}${shade(g)}${shade(b)})`
+  }
+  return DAY_COLORS[di] ?? DAY_COLORS[DAY_COLORS.length - 1]
+}
 
 export default async function EditionSchedulePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -70,7 +101,7 @@ export default async function EditionSchedulePage({ params }: { params: Promise<
               <div className="mob-pill-tabs">
                 {days.map((day: any, di: number) => (
                   <button key={di} className={`mob-pill-tab${di === 0 ? ' active' : ''}`} data-cat={di}>
-                    {DAY_EMOJIS[di] ?? '📅'} Day {di}
+                    <DayIcon day={day} di={di} size={14} /> Day {di}
                   </button>
                 ))}
               </div>
@@ -91,8 +122,8 @@ export default async function EditionSchedulePage({ params }: { params: Promise<
               <div className="schedule reveal desk-only">
                 {days.map((day: any, di: number) => (
                   <div key={di} className="schedule-item">
-                    <div className="schedule-date" style={{ background: DAY_COLORS[di] ?? DAY_COLORS[DAY_COLORS.length - 1], color: '#fff', borderRadius: 10, padding: '14px 18px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 22, marginBottom: 4 }}>{DAY_EMOJIS[di] ?? '📅'}</div>
+                    <div className="schedule-date" style={{ background: dayGradient(day, di), color: '#fff', borderRadius: 10, padding: '14px 18px', textAlign: 'center' }}>
+                      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><DayIcon day={day} di={di} size={24} badge /></div>
                       <div style={{ fontWeight: 900, fontSize: 15 }}>Day {di}</div>
                       <div style={{ fontSize: 12, opacity: .75 }}>{day.dayLabel.split('—')[1]?.trim() ?? ''}</div>
                     </div>
@@ -128,8 +159,8 @@ export default async function EditionSchedulePage({ params }: { params: Promise<
               <div className="mob-only">
                 {days.map((day: any, di: number) => (
                   <div key={di} className={`mob-pill-panel${di === 0 ? ' active' : ''}`} data-panel={di}>
-                    <div className="mob-day-head" style={{ background: DAY_COLORS[di] ?? DAY_COLORS[DAY_COLORS.length - 1] }}>
-                      <span className="mob-day-emoji">{DAY_EMOJIS[di] ?? '📅'}</span>
+                    <div className="mob-day-head" style={{ background: dayGradient(day, di) }}>
+                      <DayIcon day={day} di={di} size={24} badge />
                       <div>
                         <strong>{day.dayTitle || day.dayLabel}</strong>
                         {day.dayNote && <span>{day.dayNote}</span>}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPayload } from 'payload'
-import configPromise from '@payload-config'
+
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8055'
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,18 +11,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
     }
 
-    const payload = await getPayload({ config: configPromise })
-    await payload.create({
-      collection: 'inquiries',
-      data: {
+    const res = await fetch(`${DIRECTUS_URL}/items/inquiries`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         name: name.trim(),
         email: email.trim(),
         subject: subject || 'Other',
         message: message.trim(),
         country: country?.trim() || '',
         status: 'new',
-      },
+      }),
     })
+    if (!res.ok) throw new Error(`Directus create failed (${res.status})`)
 
     return NextResponse.json({ ok: true })
   } catch (err) {

@@ -4,26 +4,103 @@ import { getSiteSettings, getHomePage, getNewsItems, getPartners, getGallery, ge
 export const dynamic = 'force-dynamic'
 
 const FALLBACK_HERO_IMG = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=1600&q=80'
-const FALLBACK_GALLERY: { image: string; title: string; text: string; tag: string }[] = [
+
+type GalleryItem = {
+  image: string
+  title: string
+  text: string
+  tag: string
+  stage: string
+  mediaType: 'photo' | 'video'
+  videoUrl: string
+  videoFile: string
+}
+
+const FALLBACK_GALLERY: GalleryItem[] = [
   {
     image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1600&q=80',
     title: 'Böyük Final mərasimi',
     text: 'Londonda keçirilən Böyük Finalın mükafatlandırma mərasimindən görüntülər.',
     tag: 'Seçilmiş Media',
+    stage: 'grand-final',
+    mediaType: 'photo',
+    videoUrl: '',
+    videoFile: '',
   },
   {
     image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=80',
     title: 'İmtahan günü',
     text: 'Şagirdlər yazılı imtahan turunda diqqətli və qətiyyətli görünürlər.',
     tag: 'Foto',
+    stage: 'preliminary',
+    mediaType: 'photo',
+    videoUrl: '',
+    videoFile: '',
   },
   {
     image: 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=900&q=80',
     title: 'Milli Finaldan görüntü',
     text: 'Ölkə daxili Milli Final mərhələsindən canlı anlar.',
     tag: 'Foto',
+    stage: 'national-final',
+    mediaType: 'photo',
+    videoUrl: '',
+    videoFile: '',
   },
 ]
+
+// Extract a YouTube video ID from common URL formats (watch / youtu.be / embed / shorts)
+function getYouTubeId(url: string): string {
+  if (!url) return ''
+  const m = url.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/)
+  return m ? m[1] : ''
+}
+
+// Background image for a gallery card: own image/poster, else YouTube thumbnail, else none
+function galleryBg(item: GalleryItem): string {
+  if (item.image) return item.image
+  if (item.mediaType === 'video') {
+    const id = getYouTubeId(item.videoUrl)
+    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`
+  }
+  return ''
+}
+
+function GalleryCard({ item, big }: { item: GalleryItem; big?: boolean }) {
+  const bg = galleryBg(item)
+  const isVideo = item.mediaType === 'video'
+  const ytId = isVideo ? getYouTubeId(item.videoUrl) : ''
+  // Uploaded video with no poster image: show the video itself as a live preview
+  const showVideoBg = isVideo && !!item.videoFile && !bg
+  return (
+    <article
+      className={`${big ? 'gallery-feature' : 'gallery-item'} reveal${showVideoBg ? ' has-bg-video' : ''}`}
+      style={bg ? { ['--bg' as string]: `url('${bg}')` } : undefined}
+      data-gallery="1"
+      data-media-type={isVideo ? (item.videoFile ? 'video-file' : 'youtube') : 'photo'}
+      data-video-src={item.videoFile}
+      data-youtube-id={ytId}
+      data-title={item.title}
+    >
+      {showVideoBg && (
+        <video
+          className="gallery-bg-video"
+          src={item.videoFile}
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      )}
+      <span className="pill">{item.tag}</span>
+      {isVideo && <span className="gallery-play" aria-hidden="true">▶</span>}
+      <h3>{item.title}</h3>
+      <p>{item.text}</p>
+    </article>
+  )
+}
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
   Confirmed:     { bg: 'rgba(47,207,127,.15)',  color: 'var(--green)',  label: '✅ Confirmed' },
@@ -47,30 +124,29 @@ export default async function HomePage() {
     background: `linear-gradient(135deg,rgba(10,16,52,.84) 0%,rgba(23,32,90,.72) 55%,rgba(255,130,26,.38) 100%), url('${heroBg}') center/cover no-repeat`,
   }
 
-  // Gallery — show the item matching the current contest stage
+  // Gallery — feature the item matching the current contest stage,
+  // plus up to two more as small side cards (padded with fallback items if needed)
   const currentStage = (ss as any).currentContestStage || 'preliminary'
-  const STAGE_FALLBACK: Record<string, typeof FALLBACK_GALLERY[0]> = {
-    'preliminary':   FALLBACK_GALLERY[1], // exam day
-    'national-final':FALLBACK_GALLERY[2], // national final
-    'grand-final':   FALLBACK_GALLERY[0], // ceremony
-  }
-  const galleryItems = galleryDocs.length > 0
+  const galleryItems: GalleryItem[] = galleryDocs.length > 0
     ? galleryDocs.map((g: any) => ({
         image: (g.image as any)?.url || '',
         title: g.title || '',
         text:  g.subtitle || '',
         tag:   g.tag || 'Foto',
         stage: g.stage || '',
+        mediaType: g.mediaType === 'video' ? 'video' : 'photo',
+        videoUrl: g.videoUrl || '',
+        videoFile: (g.videoFile as any)?.url || '',
       }))
-    : FALLBACK_GALLERY.map((g, i) => ({
-        ...g,
-        stage: ['grand-final','preliminary','national-final'][i] ?? 'preliminary',
-      }))
+    : FALLBACK_GALLERY
 
-  const featuredItem =
-    galleryItems.find((g: any) => g.stage === currentStage) ??
-    galleryItems[0] ??
-    STAGE_FALLBACK[currentStage]
+  const featuredItem = galleryItems.find((g) => g.stage === currentStage) ?? galleryItems[0]
+
+  const sideItems = (() => {
+    const rest = galleryItems.filter((g) => g !== featuredItem)
+    const padded = rest.length >= 2 ? rest : [...rest, ...FALLBACK_GALLERY.filter((f) => f !== featuredItem)]
+    return padded.slice(0, 2)
+  })()
 
   // Exam calendar teaser — first 4 by order
   const examTeaser = examTimes.slice(0, 4)
@@ -254,16 +330,14 @@ export default async function HomePage() {
               <h2 className="section-title reveal">Photo and video highlights.</h2>
             </div>
           </div>
-          {featuredItem && (
-            <article
-              className="gallery-feature gallery-feature-full reveal"
-              style={{ ['--bg' as string]: `url('${featuredItem.image}')` }}
-            >
-              <span className="pill">{featuredItem.tag}</span>
-              <h3>{featuredItem.title}</h3>
-              <p>{featuredItem.text}</p>
-            </article>
-          )}
+          <div className="gallery-grid">
+            {featuredItem && <GalleryCard item={featuredItem} big />}
+            <div className="gallery-side">
+              {sideItems.map((item, i) => (
+                <GalleryCard key={i} item={item} />
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

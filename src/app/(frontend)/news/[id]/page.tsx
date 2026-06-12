@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getPayload } from 'payload'
-import configPromise from '@payload-config'
+import { directusFetch, fileUrl } from '@/lib/directus'
 import { getNewsItems } from '@/lib/globals'
 
 export const dynamic = 'force-dynamic'
@@ -25,8 +24,13 @@ export default async function NewsArticlePage({
 
   let article: any
   try {
-    const payload = await getPayload({ config: configPromise })
-    article = await payload.findByID({ collection: 'news', id, depth: 1 })
+    const n = await directusFetch(`/items/news/${encodeURIComponent(id)}?fields=*`)
+    article = {
+      ...n,
+      text: n.title,
+      published: n.status === 'published',
+      image: fileUrl(n.image),
+    }
   } catch {
     notFound()
   }
@@ -60,13 +64,13 @@ export default async function NewsArticlePage({
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '5px 14px', borderRadius: 999,
-              background: 'rgba(255,255,255,.18)', color: '#fff',
-              fontSize: 12, fontWeight: 900, backdropFilter: 'blur(8px)',
+              background: clr.bg, color: clr.color,
+              fontSize: 12, fontWeight: 900,
             }}>
               {CATEGORY_ICON[cat]} {cat}
             </span>
             {article.date && (
-              <span style={{ fontSize: 13, color: 'rgba(255,255,255,.65)', fontWeight: 700 }}>
+              <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 700 }}>
                 {article.date}
               </span>
             )}
@@ -100,13 +104,11 @@ export default async function NewsArticlePage({
 
             {/* Article content */}
             {article.content ? (
-              <div style={{ fontSize: 17, lineHeight: 1.85, color: 'var(--ink)' }}>
-                {article.content.split('\n').map((para: string, i: number) =>
-                  para.trim() ? (
-                    <p key={i} style={{ marginBottom: 22 }}>{para}</p>
-                  ) : null
-                )}
-              </div>
+              <div
+                style={{ fontSize: 17, lineHeight: 1.85, color: 'var(--ink)' }}
+                className="news-article-body"
+                dangerouslySetInnerHTML={{ __html: article.content }}
+              />
             ) : (
               <p style={{ color: 'var(--muted)', fontStyle: 'italic', fontSize: 15 }}>
                 Full content not available for this item.

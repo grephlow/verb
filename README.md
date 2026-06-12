@@ -1,94 +1,106 @@
-# Verbivore Next.js + Payload CMS
+# Verbivore Next.js + Directus CMS
 
 ## Stack
-- **Next.js 16** with App Router + Turbopack
-- **Payload CMS v3** — embedded in Next.js
-- **SQLite** via `@payloadcms/db-sqlite` (libsql) → `verbivore.db`
+- **Next.js 16** with App Router (webpack build)
+- **Directus 12** — headless CMS, in `directus-cms/`
+- **SQLite** — `directus-cms/verbivore.db` (committed so the project ships with seeded demo data)
+
+The Next.js app is a pure frontend: every page fetches its content from the
+Directus REST API via `DIRECTUS_URL` (see `src/lib/directus.ts`, `src/lib/globals.ts`).
 
 ---
 
-## Development
+## Development (without Docker)
 
 ```bash
+# Terminal 1 — Directus
+cd directus-cms
 npm install
-npm run dev          # auto-creates DB + seeds data on first run
+npx directus start          # http://localhost:8055
+
+# Terminal 2 — Next.js
+cd verbivore-next
+npm install
+npm run dev                  # http://localhost:3000
 ```
 
-Open `http://localhost:3000`. On first start, Payload creates all tables and seeds
-initial demo content automatically.
+`directus-cms/.env` holds `KEY`, `SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` (copy
+from `.env.example` on first setup). The Directus admin UI is at
+`http://localhost:8055/admin`.
 
 ---
 
-## Production deployment
+## Development with Docker (containerized dev database)
+
+Runs Directus in a container (persisted SQLite data) plus Next.js with hot reload:
 
 ```bash
-npm install
-
-# Step 1 — initialise the database (only once, before first build)
-npm run dev
-# Wait until you see: "Seed complete." in the logs, then Ctrl+C
-
-# Step 2 — build
-npm run build
-
-# Step 3 — start
-npm run start
+docker compose -f docker-compose.dev.yml up --build
 ```
 
-> After the DB exists, you can run `npm run build && npm run start` directly
-> without repeating step 1.
+- Frontend: `http://localhost:3000`
+- Directus admin: `http://localhost:8055/admin`
 
 ---
 
-## Admin panel
+## Production / "enterprise" deployment
 
-First launch → open `/admin` → **Create First User** → enter email + password.
+Builds optimized images for both services:
 
----
-
-## URLs
-
-| URL | Description |
-|-----|-------------|
-| `/` | Public homepage |
-| `/admin` | Payload CMS admin UI |
-| `/api/<collection>` | Public REST API |
-
----
-
-## Collections
-
-| Collection | Slug | Pages |
-|------------|------|-------|
-| News | `news` | Homepage ticker |
-| FAQ | `faq` | `/faq` |
-| Committee | `committee` | `/verbivore/scientific-committee` |
-| Countries | `countries` | `/verbivore/countries-territories` |
-| Partners | `partners` | Homepage partner logos |
-| Regulations | `regulations` | `/verbivore/regulations` |
-| Exam Times | `exam-times` | `/verbivore/exam-time` |
-
----
-
-## REST API (public, read-only)
-
-```
-GET /api/news
-GET /api/faq
-GET /api/committee
-GET /api/countries
-GET /api/partners
-GET /api/regulations
-GET /api/exam-times
+```bash
+cp .env.example .env   # adjust DIRECTUS_* values for your domain/secrets
+docker compose up -d --build
 ```
 
-Supports: `?limit=`, `?page=`, `?sort=`, `?where[field][equals]=value`
+- Frontend: `http://localhost:3000`
+- Directus admin: `http://localhost:8055/admin`
+
+Both services persist data via bind mounts to `directus-cms/` (`verbivore.db`,
+`uploads/`, `extensions/`), so `docker compose down` / rebuilds don't lose data.
 
 ---
 
-## Environment variables (`.env`)
+## Directus content structure
 
+The admin nav is grouped into folders:
+
+| Folder | Collections |
+|--------|-------------|
+| 📚 Yarış Mərhələləri | preliminary_page, national_final_page, sample_questions_page, preliminary_resources, exam_times, regulations, categories |
+| 📄 Sayt Səhifələri | home_page, about_page, contact_page, editions_page, site_settings |
+| 🌍 Məlumat Bazaları | countries, committee, certificates, partners |
+| 📰 Media və Bloq | gallery, news, faq |
+
+Plus top-level: `editions`, `inquiries`.
+
+Seed scripts (idempotent, run from `directus-cms/`):
+
+```bash
+node seed/01-collections.mjs
+node seed/02-seed.mjs
+# ... through 15-admin-nav-folders.mjs
+```
+
+---
+
+## Environment variables
+
+### `verbivore-next/.env`
 ```env
-DATABASE_URI=file:./verbivore.db
-PAYLOAD_SECRET=change-this-in-production
+DIRECTUS_URL=http://localhost:8055
+```
+
+### `directus-cms/.env`
+```env
+HOST="0.0.0.0"
+PORT="8055"
+PUBLIC_URL="http://localhost:8055"
+KEY="..."
+SECRET="..."
+DB_CLIENT="sqlite3"
+DB_FILENAME="./verbivore.db"
+ADMIN_EMAIL="admin@verbivore.org"
+ADMIN_PASSWORD="..."
+CORS_ENABLED="true"
+CORS_ORIGIN="true"
 ```

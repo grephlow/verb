@@ -1,0 +1,7 @@
+node_modules
+extensions/*/node_modules
+.env
+*.db-journal
+uploads
+verbivore.db
+seed

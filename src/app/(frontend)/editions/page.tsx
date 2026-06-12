@@ -1,37 +1,44 @@
 import Link from 'next/link'
-import { getEditions, getEditionsPage, editionHost } from '@/lib/globals'
+import { getEditions, getEditionsPage, getCountries, editionHost } from '@/lib/globals'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Editions | Verbivore The Contest' }
 
 export default async function EditionsPage() {
-  const [ep, editions] = await Promise.all([getEditionsPage(), getEditions()])
+  const [ep, editions, countries] = await Promise.all([getEditionsPage(), getEditions(), getCountries()])
 
   const featured = editions.find((e: any) => e.status === 'current') ?? editions[0] ?? null
   const featuredImg = featured ? ((featured.image as any)?.url ?? (featured.heroImage as any)?.url ?? null) : null
   const featuredHost = editionHost(featured)
+  const heroFlags = countries.map((c: any) => c.flag).filter(Boolean).slice(0, 6)
 
   return (
     <>
       {/* ── HERO ─────────────────────────────────────────── */}
-      <section className="page-hero" style={{ background: 'linear-gradient(135deg,#17205a,#1e2e6e)', color: '#fff' }}>
+      <section className="page-hero editions-hero" style={{ background: 'linear-gradient(135deg,#11185a 0%,#1c2c72 55%,#2d1b8a 100%)', color: '#fff' }}>
+        <div className="eh-flags desk-only" aria-hidden="true">
+          {heroFlags.map((flag: string, i: number) => (
+            <span key={i} className={`eh-flag eh-flag-${i + 1}`}>{flag}</span>
+          ))}
+        </div>
         <div className="container">
           <div className="breadcrumb" style={{ color: 'rgba(255,255,255,.7)' }}>
             <Link href="/" style={{ color: 'rgba(255,255,255,.7)' }}>Home</Link>
             <span>›</span>
             <span>Editions</span>
           </div>
+          <div className="eyebrow"><span></span> Global Competition</div>
           <h1 style={{ color: '#fff' }}>{ep.heroTitle || 'Grand Final Editions'}</h1>
           <p style={{ color: 'rgba(255,255,255,.84)', maxWidth: 600 }}>{ep.heroSubtitle || 'Each Verbivore Grand Final is hosted in a different country — a full week of academic excellence, cultural discovery and international friendship.'}</p>
-          <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', marginTop: 28 }}>
+          <div className="eh-stats">
             {[
               [ep.statsEditions || '3',    'Editions hosted'],
               [ep.statsCountries || '35+', 'Countries in 2026'],
               [ep.statsAlumni || '500+',   'Grand Final alumni'],
             ].map(([n, label]) => (
-              <div key={String(label)} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 34, fontWeight: 900, color: '#fff' }}>{n}</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.65)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em' }}>{label}</div>
+              <div className="eh-stat" key={String(label)}>
+                <b>{n}</b>
+                <span>{label}</span>
               </div>
             ))}
           </div>

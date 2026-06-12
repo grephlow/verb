@@ -1,0 +1,11 @@
+# dependencies
+node_modules
+extensions/*/node_modules
+
+# env files (real KEY/SECRET/ADMIN_PASSWORD — never commit)
+.env
+
+# sqlite journal/lock files
+*.db-journal
+*.db-wal
+*.db-shm

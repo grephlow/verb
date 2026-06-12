@@ -14,9 +14,9 @@ export default async function ExamTimePage() {
   const docs = await getExamTimes()
 
   // Build unique country list for filter dropdown
-  const countries = Array.from(new Set(docs.map((d) => d.country?.name))).filter(Boolean)
+  const countries = Array.from(new Set<string>(docs.map((d) => d.country?.name))).filter(Boolean)
   // Build unique year list for filter dropdown (most recent first)
-  const years = Array.from(new Set(docs.map((d) => d.year).filter(Boolean))).sort((a, b) => b - a)
+  const years = Array.from(new Set<number>(docs.map((d) => d.year).filter(Boolean))).sort((a, b) => b - a)
 
   return (
     <>

@@ -63,7 +63,7 @@ var countdownStarted  = false;
 var toastTimer        = null;
 
 /* ── SINGLETON DOM ELEMENTS ─────────────────────────── */
-var lbEl = null, lbImg = null, lbCap = null;   // lightbox
+var lbEl = null, lbImg = null, lbVideo = null, lbYt = null, lbYtFrame = null, lbCap = null;   // lightbox
 var mapTip = null;                              // map tooltip
 
 /* =====================================================
@@ -163,16 +163,40 @@ function ensureLightbox() {
     '<div class="glb-inner">' +
       '<button class="glb-close" aria-label="Close">✕</button>' +
       '<img class="glb-img" src="" alt="" />' +
+      '<video class="glb-video" controls playsinline></video>' +
+      '<div class="glb-yt"><iframe class="glb-yt-iframe" src="" title="Video" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>' +
       '<div class="glb-caption"></div>' +
     '</div>';
   document.body.appendChild(lbEl);
-  lbImg = lbEl.querySelector('.glb-img');
-  lbCap = lbEl.querySelector('.glb-caption');
+  lbImg     = lbEl.querySelector('.glb-img');
+  lbVideo   = lbEl.querySelector('.glb-video');
+  lbYt      = lbEl.querySelector('.glb-yt');
+  lbYtFrame = lbEl.querySelector('.glb-yt-iframe');
+  lbCap     = lbEl.querySelector('.glb-caption');
 }
 
-function openLightbox(imgUrl, caption) {
+// type: 'photo' | 'video' | 'youtube'
+function openLightbox(type, src, caption) {
   ensureLightbox();
-  lbImg.src    = imgUrl || '';
+  lbImg.style.display   = 'none';
+  lbVideo.style.display = 'none';
+  lbYt.style.display    = 'none';
+  lbVideo.pause();
+  lbVideo.removeAttribute('src');
+  lbYtFrame.src = '';
+
+  if (type === 'video') {
+    lbVideo.src = src || '';
+    lbVideo.style.display = 'block';
+    lbVideo.play().catch(function() {});
+  } else if (type === 'youtube') {
+    lbYtFrame.src = 'https://www.youtube.com/embed/' + src + '?autoplay=1&rel=0';
+    lbYt.style.display = 'block';
+  } else {
+    lbImg.src = src || '';
+    lbImg.style.display = 'block';
+  }
+
   lbCap.textContent = caption || '';
   lbEl.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -182,6 +206,9 @@ function closeLightbox() {
   if (!lbEl) return;
   lbEl.classList.remove('open');
   document.body.style.overflow = '';
+  lbVideo.pause();
+  lbVideo.removeAttribute('src');
+  lbYtFrame.src = '';
 }
 
 /* =====================================================
@@ -395,6 +422,21 @@ document.addEventListener('click', function(e) {
     return;
   }
 
+  /* Gallery card — open lightbox (photo / uploaded video / YouTube) */
+  var galCard = e.target.closest('[data-gallery]');
+  if (galCard) {
+    var galType = galCard.getAttribute('data-media-type') || 'photo';
+    var galCaption = galCard.getAttribute('data-title') || '';
+    if (galType === 'video-file') {
+      openLightbox('video', galCard.getAttribute('data-video-src'), galCaption);
+    } else if (galType === 'youtube') {
+      openLightbox('youtube', galCard.getAttribute('data-youtube-id'), galCaption);
+    } else {
+      openLightbox('photo', getGalleryBg(galCard), galCaption);
+    }
+    return;
+  }
+
   /* Gallery lightbox — close */
   if (e.target.closest('.glb-close') || e.target.id === 'galleryLightbox') {
     closeLightbox();
@@ -460,15 +502,6 @@ function initPage() {
     }, { signal: sig });
   }
 
-  document.querySelectorAll('.gallery-item').forEach(function(el) {
-    el.style.cursor = 'pointer';
-    el.addEventListener('click', function() {
-      var img = getGalleryBg(el) || (galleryData[0] && galleryData[0].image);
-      var h3  = el.querySelector('h3');
-      openLightbox(img, h3 ? h3.textContent : '');
-    }, { signal: sig });
-  });
-
   var prevBtn = document.getElementById('prevGallery');
   var nextBtn = document.getElementById('nextGallery');
   if (prevBtn) prevBtn.addEventListener('click', function() {
@@ -479,6 +512,19 @@ function initPage() {
     clearInterval(autoGalleryTimer); updateGallery(1);
     autoGalleryTimer = setInterval(function() { updateGallery(1); }, 4200);
   }, { signal: sig });
+
+  /* ── Gallery: hover-to-preview uploaded video backgrounds ── */
+  document.querySelectorAll('.gallery-bg-video').forEach(function(vid) {
+    var card = vid.closest('.gallery-feature, .gallery-item');
+    if (!card) return;
+    card.addEventListener('mouseenter', function() {
+      vid.play().catch(function() {});
+    }, { signal: sig });
+    card.addEventListener('mouseleave', function() {
+      vid.pause();
+      vid.currentTime = 0;
+    }, { signal: sig });
+  });
 
   /* ── Animated counters ── */
   var cObserver = new IntersectionObserver(function(entries) {
@@ -602,21 +648,41 @@ function initPage() {
     }, { signal: sig });
   }
 
-  /* ── Mobile: Country filter pills ── */
-  document.querySelectorAll('.mob-filter-pill').forEach(function(pill) {
-    pill.addEventListener('click', function() {
-      document.querySelectorAll('.mob-filter-pill').forEach(function(p) { p.classList.remove('active'); });
-      pill.classList.add('active');
-      var filter = pill.getAttribute('data-country-filter') || 'All';
-      document.querySelectorAll('.mob-country-row').forEach(function(row) {
-        if (filter === 'All' || row.getAttribute('data-status') === filter) {
-          row.classList.remove('hidden');
-        } else {
-          row.classList.add('hidden');
-        }
+  /* ── Countries & Territories: search + mobile status filter ── */
+  var countrySearch = document.getElementById('countrySearch');
+  if (countrySearch || document.querySelector('.mob-filter-pill')) {
+    var applyCountryRowFilter = function() {
+      var q = countrySearch ? countrySearch.value.trim().toLowerCase() : '';
+      var activePill = document.querySelector('.mob-filter-pill.active');
+      var status = activePill ? (activePill.getAttribute('data-country-filter') || 'All') : 'All';
+      document.querySelectorAll('.mob-country-row[data-country-name]').forEach(function(row) {
+        var statusMatch = status === 'All' || row.getAttribute('data-status') === status;
+        var searchMatch = !q || row.getAttribute('data-country-name').indexOf(q) !== -1;
+        row.classList.toggle('hidden', !(statusMatch && searchMatch));
       });
-    }, { signal: sig });
-  });
+    };
+    var applyCountryCardFilter = function() {
+      var q = countrySearch ? countrySearch.value.trim().toLowerCase() : '';
+      document.querySelectorAll('.country-card[data-country-name]').forEach(function(card) {
+        card.style.display = (!q || card.getAttribute('data-country-name').indexOf(q) !== -1) ? '' : 'none';
+      });
+    };
+
+    if (countrySearch) {
+      countrySearch.addEventListener('input', function() {
+        applyCountryCardFilter();
+        applyCountryRowFilter();
+      }, { signal: sig });
+    }
+
+    document.querySelectorAll('.mob-filter-pill').forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        document.querySelectorAll('.mob-filter-pill').forEach(function(p) { p.classList.remove('active'); });
+        pill.classList.add('active');
+        applyCountryRowFilter();
+      }, { signal: sig });
+    });
+  }
 
   /* ── Mobile: Exam time card filters ── */
   var mobRoundFilter  = document.getElementById('mobRoundFilter');

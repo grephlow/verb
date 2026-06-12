@@ -54,6 +54,26 @@ export default async function CountriesPage() {
         </div>
       </section>
 
+      {/* SEARCH */}
+      <section style={{ padding: '36px 0 0' }}>
+        <div className="container">
+          <div className="participant-search-bar reveal" style={{ maxWidth: 480, margin: '0 auto' }}>
+            <input
+              type="text"
+              id="countrySearch"
+              placeholder="Find your country..."
+              autoComplete="off"
+              style={{
+                width: '100%', padding: '14px 46px 14px 22px', borderRadius: 999,
+                border: '1px solid var(--line)', background: '#fff',
+                fontSize: 15, fontWeight: 700, color: 'var(--navy)', outline: 'none',
+              }}
+            />
+            <span className="participant-search-icon">🔍</span>
+          </div>
+        </div>
+      </section>
+
       {/* WORLD MAP — desktop only */}
       <section className="desk-only">
         <div className="container">
@@ -95,7 +115,11 @@ export default async function CountriesPage() {
         <div className="container">
           <div className="country-grid">
             {docs.map((c, i) => (
-              <div key={c.id} className={`country-card reveal reveal-delay-${(i % 4) + 1}`}>
+              <div
+                key={c.id}
+                className={`country-card reveal reveal-delay-${(i % 4) + 1}`}
+                data-country-name={[c.name, c.accreditedOrganization, c.representative].filter(Boolean).join(' ').toLowerCase()}
+              >
                 <div className="flag"><FlagImg flag={c.flag} name={c.name} /></div>
                 <h3>{c.name}</h3>
                 <p style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
@@ -207,7 +231,12 @@ export default async function CountriesPage() {
 
           <div className="mob-country-list" id="mobCountryList">
             {docs.map((c) => (
-              <div key={c.id} className="mob-country-row" data-status={c.status}>
+              <div
+                key={c.id}
+                className="mob-country-row"
+                data-status={c.status}
+                data-country-name={[c.name, c.accreditedOrganization, c.representative].filter(Boolean).join(' ').toLowerCase()}
+              >
                 <div className="mob-country-flag"><FlagImg flag={c.flag} name={c.name} /></div>
                 <div className="mob-country-info">
                   <strong>{c.name}</strong>

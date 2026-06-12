@@ -1,5 +1,6 @@
 .next
 node_modules
+directus-cms
 *.db
 *.db-shm
 *.db-wal
@@ -10,4 +11,6 @@ npm-debug.log*
 .gitignore
 README.md
 Dockerfile
+Dockerfile.dev
 docker-compose.yml
+docker-compose.dev.yml

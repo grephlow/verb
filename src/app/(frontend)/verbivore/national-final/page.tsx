@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getNationalFinalResources } from '@/lib/globals'
+import { getNationalFinalResources, getNationalFinalPage } from '@/lib/globals'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'National Final | Verbivore The Contest' }
@@ -29,25 +29,30 @@ function groupResults(items: any[]): ResultRound[] {
   return Object.values(map)
 }
 
-const STEPS = [
-  { n: '01', title: 'Qualification',  text: 'Top scorers from the Preliminary Round receive an invitation from their national representative.' },
-  { n: '02', title: 'Exam Day',        text: 'A harder paper completed at the national representative venue. Duration: 90–120 minutes.' },
-  { n: '03', title: 'Grand Final',     text: 'National medal winners and Grand Final invitees are announced within 4 weeks of the exam.' },
+const DEFAULT_STEPS = [
+  { number: '01', title: 'Qualification',  text: 'Top scorers from the Preliminary Round receive an invitation from their national representative.' },
+  { number: '02', title: 'Exam Day',        text: 'A harder paper completed at the national representative venue. Duration: 90–120 minutes.' },
+  { number: '03', title: 'Grand Final',     text: 'National medal winners and Grand Final invitees are announced within 4 weeks of the exam.' },
 ]
-const KEY_INFO: [string, string, string][] = [
-  ['⏱️', 'Duration',     '90–120 minutes'],
-  ['📋', 'Format',       'Paper-based + optional oral'],
-  ['🎯', 'Eligibility',  'Top % from Preliminary Round'],
-  ['🏆', 'Advancement',  'Grand Final invitation'],
+const DEFAULT_KEY_INFO = [
+  { icon: '⏱️', label: 'Duration',    value: '90–120 minutes' },
+  { icon: '📋', label: 'Format',      value: 'Paper-based + optional oral' },
+  { icon: '🎯', label: 'Eligibility', value: 'Top % from Preliminary Round' },
+  { icon: '🏆', label: 'Advancement', value: 'Grand Final invitation' },
 ]
-const AWARD_TAGS = ['🥇 Gold Medal','🥈 Silver Medal','🥉 Bronze Medal','📜 Certificate','🏆 Grand Final Invite']
+const DEFAULT_AWARD_TAGS = ['🥇 Gold Medal','🥈 Silver Medal','🥉 Bronze Medal','📜 Certificate','🏆 Grand Final Invite']
 
 export default async function NationalFinalPage() {
   const docs = await getNationalFinalResources()
+  const np = await getNationalFinalPage()
 
   const sampleGroups   = groupByRound(docs.filter((d: any) => d.type === 'sample-question'))
   const syllabusGroups = groupByRound(docs.filter((d: any) => d.type === 'syllabus'))
   const resultGroups   = groupResults(docs.filter((d: any) => d.type === 'result'))
+
+  const steps     = np.steps?.length     > 0 ? np.steps     : DEFAULT_STEPS
+  const keyInfo   = np.keyInfo?.length   > 0 ? np.keyInfo   : DEFAULT_KEY_INFO
+  const awardTags = np.awardTags?.length > 0 ? np.awardTags : DEFAULT_AWARD_TAGS
 
   return (
     <>
@@ -59,8 +64,8 @@ export default async function NationalFinalPage() {
             <Link href="/verbivore">Verbivore</Link> <span>›</span>
             <span>National Final</span>
           </div>
-          <h1>National Final</h1>
-          <p>The second stage of Verbivore. Top scorers from the Preliminary Round compete in a country-level final, qualifying the best for the Grand Final.</p>
+          <h1>{np.heroTitle}</h1>
+          <p>{np.heroSubtitle}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 24 }}>
             <a className="btn btn-primary" href="#sample-questions">Nümunə suallar</a>
             <a className="btn btn-blue"    href="#syllabus">Sillabus</a>
@@ -77,13 +82,13 @@ export default async function NationalFinalPage() {
             {/* How it works */}
             <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '22px 26px', borderBottom: '1px solid var(--line)' }}>
-                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950, color: 'var(--navy-2)', letterSpacing: '-.3px' }}>How it works</h2>
-                <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.55 }}>National Final mərhələsinin əsas proses xəritəsi.</p>
+                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950, color: 'var(--navy-2)', letterSpacing: '-.3px' }}>{np.howItWorksTitle}</h2>
+                <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.55 }}>{np.howItWorksSubtitle}</p>
               </div>
               <div className="prelim-step-list">
-                {STEPS.map(({ n, title, text }) => (
-                  <div key={n} className="prelim-step">
-                    <span className="prelim-step-no">{n}</span>
+                {steps.map(({ number, title, text }: any) => (
+                  <div key={number} className="prelim-step">
+                    <span className="prelim-step-no">{number}</span>
                     <div>
                       <strong style={{ display: 'block', color: 'var(--navy-2)', fontWeight: 950, marginBottom: 5, fontSize: 15 }}>{title}</strong>
                       <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14, lineHeight: 1.55, fontWeight: 600 }}>{text}</p>
@@ -96,20 +101,20 @@ export default async function NationalFinalPage() {
             {/* Side cards */}
             <div style={{ display: 'grid', gap: 16 }}>
               <div className="panel">
-                <h3 style={{ margin: '0 0 14px', fontSize: 17, fontWeight: 950, color: 'var(--navy-2)' }}>📋 Key Info</h3>
+                <h3 style={{ margin: '0 0 14px', fontSize: 17, fontWeight: 950, color: 'var(--navy-2)' }}>{np.keyInfoTitle}</h3>
                 <div className="prelim-key-table">
-                  {KEY_INFO.map(([, k, v]) => (
-                    <div key={k} className="prelim-key-row">
-                      <span style={{ color: 'var(--muted)' }}>{k}</span>
-                      <span>{v}</span>
+                  {keyInfo.map(({ label, value }: any) => (
+                    <div key={label} className="prelim-key-row">
+                      <span style={{ color: 'var(--muted)' }}>{label}</span>
+                      <span>{value}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="panel">
-                <h3 style={{ margin: '0 0 14px', fontSize: 17, fontWeight: 950, color: 'var(--navy-2)' }}>🏅 Awards</h3>
+                <h3 style={{ margin: '0 0 14px', fontSize: 17, fontWeight: 950, color: 'var(--navy-2)' }}>{np.awardsTitle}</h3>
                 <div className="prelim-topic-tags">
-                  {AWARD_TAGS.map(t => (
+                  {awardTags.map((t: string) => (
                     <span key={t} className="prelim-topic-tag">{t}</span>
                   ))}
                 </div>
@@ -123,20 +128,20 @@ export default async function NationalFinalPage() {
       <section className="mob-only" style={{ paddingTop: 0 }}>
         <div className="container">
           <div className="mob-stat-strip" style={{ marginBottom: 18 }}>
-            {KEY_INFO.map(([icon, k, v]) => (
-              <div key={k} className="mob-stat-pill wide">
+            {keyInfo.map(({ icon, label, value }: any) => (
+              <div key={label} className="mob-stat-pill wide">
                 <div className="mob-stat-pill-icon">{icon}</div>
-                <b>{v}</b>
-                <span>{k}</span>
+                <b>{value}</b>
+                <span>{label}</span>
               </div>
             ))}
           </div>
           <div className="panel mob-info-panel">
             <h3>🗺️ How it works</h3>
             <div className="mob-stepper">
-              {STEPS.map(({ n, title, text }) => (
-                <div key={n} className="mob-stepper-item">
-                  <div className="mob-stepper-node">{Number(n)}</div>
+              {steps.map(({ number, title, text }: any) => (
+                <div key={number} className="mob-stepper-item">
+                  <div className="mob-stepper-node">{Number(number)}</div>
                   <div className="mob-stepper-body">
                     <strong>{title}</strong>
                     <p>{text}</p>
@@ -146,9 +151,9 @@ export default async function NationalFinalPage() {
             </div>
           </div>
           <div className="panel mob-info-panel">
-            <h3>🏅 Awards</h3>
+            <h3>{np.awardsTitle}</h3>
             <div className="prelim-topic-tags">
-              {AWARD_TAGS.map(t => (
+              {awardTags.map((t: string) => (
                 <span key={t} className="prelim-topic-tag">{t}</span>
               ))}
             </div>
@@ -160,8 +165,8 @@ export default async function NationalFinalPage() {
       <section id="sample-questions" className="prelim-resource-section section-soft">
         <div className="container">
           <div className="prelim-section-head">
-            <h2>Nümunə suallar</h2>
-            <p>National Final üçün hazırlıq nümunə sualları. Kateqoriyanı seçib müvafiq PDF-i açın.</p>
+            <h2>{np.sampleQuestionsTitle}</h2>
+            <p>{np.sampleQuestionsText}</p>
           </div>
           <div className="panel" style={{ padding: 16 }}>
             <ResourceAccordion groups={sampleGroups} />
@@ -173,8 +178,8 @@ export default async function NationalFinalPage() {
       <section id="syllabus" className="prelim-resource-section">
         <div className="container">
           <div className="prelim-section-head">
-            <h2>Sillabus</h2>
-            <p>National Final üçün kateqoriya sillabusları. Hər kateqoriya üçün PDF-i yükləyə bilərsiniz.</p>
+            <h2>{np.syllabusTitle}</h2>
+            <p>{np.syllabusText}</p>
           </div>
           <div className="panel" style={{ padding: 16 }}>
             <ResourceAccordion groups={syllabusGroups} />
@@ -186,8 +191,8 @@ export default async function NationalFinalPage() {
       <section id="results" className="prelim-resource-section section-soft">
         <div className="container">
           <div className="prelim-section-head">
-            <h2>Nəticələr</h2>
-            <p>Bu bölmə yalnız National Final nəticələri üçündür. Ölkə adına klikləyərək PDF nəticəni yükləyə bilərsiniz.</p>
+            <h2>{np.resultsTitle}</h2>
+            <p>{np.resultsText}</p>
           </div>
           <div className="panel" style={{ padding: 16 }}>
             <ResultAccordion groups={resultGroups} />

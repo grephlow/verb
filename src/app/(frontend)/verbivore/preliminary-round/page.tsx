@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getPreliminaryResources } from '@/lib/globals'
+import { getPreliminaryResources, getPreliminaryPage } from '@/lib/globals'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Preliminary Round | Verbivore The Contest' }
@@ -29,25 +29,30 @@ function groupResults(items: any[]): ResultRound[] {
   return Object.values(map)
 }
 
-const STEPS = [
-  { n: '01', title: 'Registration', text: 'Schools register students through the accredited national representative before the deadline.' },
-  { n: '02', title: 'Exam Day',      text: 'Students sit the paper in their own school, supervised by a teacher. Duration: 90 minutes.' },
-  { n: '03', title: 'Results',       text: 'Results are published within 4 weeks. Top scorers advance to the National Final.' },
+const DEFAULT_STEPS = [
+  { number: '01', title: 'Registration', text: 'Schools register students through the accredited national representative before the deadline.' },
+  { number: '02', title: 'Exam Day',      text: 'Students sit the paper in their own school, supervised by a teacher. Duration: 90 minutes.' },
+  { number: '03', title: 'Results',       text: 'Results are published within 4 weeks. Top scorers advance to the National Final.' },
 ]
-const KEY_INFO: [string, string, string][] = [
-  ['⏱️', 'Duration',    '90 minutes'],
-  ['📋', 'Format',      'Paper-based / Online'],
-  ['🌍', 'Open to',     'All registered students'],
-  ['🏆', 'Advancement', 'Top scorers by category'],
+const DEFAULT_KEY_INFO = [
+  { icon: '⏱️', label: 'Duration',    value: '90 minutes' },
+  { icon: '📋', label: 'Format',      value: 'Paper-based / Online' },
+  { icon: '🌍', label: 'Open to',     value: 'All registered students' },
+  { icon: '🏆', label: 'Advancement', value: 'Top scorers by category' },
 ]
-const TOPIC_TAGS = ['Vocabulary','Reading','Grammar','Logic','Word Formation']
+const DEFAULT_TOPIC_TAGS = ['Vocabulary','Reading','Grammar','Logic','Word Formation']
 
 export default async function PreliminaryRoundPage() {
   const docs = await getPreliminaryResources()
+  const pp = await getPreliminaryPage()
 
   const sampleGroups   = groupByRound(docs.filter((d: any) => d.type === 'sample-question'))
   const syllabusGroups = groupByRound(docs.filter((d: any) => d.type === 'syllabus'))
   const resultGroups   = groupResults(docs.filter((d: any) => d.type === 'result'))
+
+  const steps    = pp.steps?.length    > 0 ? pp.steps    : DEFAULT_STEPS
+  const keyInfo  = pp.keyInfo?.length  > 0 ? pp.keyInfo  : DEFAULT_KEY_INFO
+  const topicTags = pp.topicTags?.length > 0 ? pp.topicTags : DEFAULT_TOPIC_TAGS
 
   return (
     <>
@@ -59,8 +64,8 @@ export default async function PreliminaryRoundPage() {
             <Link href="/verbivore">Verbivore</Link> <span>›</span>
             <span>Preliminary Round</span>
           </div>
-          <h1>Preliminary Round</h1>
-          <p>The first stage of Verbivore. Held in schools across all participating countries, the Preliminary Round is open to all registered students.</p>
+          <h1>{pp.heroTitle}</h1>
+          <p>{pp.heroSubtitle}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 24 }}>
             <a className="btn btn-primary" href="#sample-questions">Nümunə suallar</a>
             <a className="btn btn-blue"    href="#syllabus">Sillabus</a>
@@ -77,13 +82,13 @@ export default async function PreliminaryRoundPage() {
             {/* How it works */}
             <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '22px 26px', borderBottom: '1px solid var(--line)' }}>
-                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950, color: 'var(--navy-2)', letterSpacing: '-.3px' }}>How it works</h2>
-                <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.55 }}>Preliminary Round mərhələsinin əsas proses xəritəsi.</p>
+                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 950, color: 'var(--navy-2)', letterSpacing: '-.3px' }}>{pp.howItWorksTitle}</h2>
+                <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.55 }}>{pp.howItWorksSubtitle}</p>
               </div>
               <div className="prelim-step-list">
-                {STEPS.map(({ n, title, text }) => (
-                  <div key={n} className="prelim-step">
-                    <span className="prelim-step-no">{n}</span>
+                {steps.map(({ number, title, text }: any) => (
+                  <div key={number} className="prelim-step">
+                    <span className="prelim-step-no">{number}</span>
                     <div>
                       <strong style={{ display: 'block', color: 'var(--navy-2)', fontWeight: 950, marginBottom: 5, fontSize: 15 }}>{title}</strong>
                       <p style={{ margin: 0, color: 'var(--muted)', fontSize: 14, lineHeight: 1.55, fontWeight: 600 }}>{text}</p>
@@ -96,20 +101,20 @@ export default async function PreliminaryRoundPage() {
             {/* Side cards */}
             <div style={{ display: 'grid', gap: 16 }}>
               <div className="panel">
-                <h3 style={{ margin: '0 0 14px', fontSize: 17, fontWeight: 950, color: 'var(--navy-2)' }}>📋 Key Info</h3>
+                <h3 style={{ margin: '0 0 14px', fontSize: 17, fontWeight: 950, color: 'var(--navy-2)' }}>{pp.keyInfoTitle}</h3>
                 <div className="prelim-key-table">
-                  {KEY_INFO.map(([, k, v]) => (
-                    <div key={k} className="prelim-key-row">
-                      <span style={{ color: 'var(--muted)' }}>{k}</span>
-                      <span>{v}</span>
+                  {keyInfo.map(({ label, value }: any) => (
+                    <div key={label} className="prelim-key-row">
+                      <span style={{ color: 'var(--muted)' }}>{label}</span>
+                      <span>{value}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div className="panel">
-                <h3 style={{ margin: '0 0 14px', fontSize: 17, fontWeight: 950, color: 'var(--navy-2)' }}>🎯 Topics tested</h3>
+                <h3 style={{ margin: '0 0 14px', fontSize: 17, fontWeight: 950, color: 'var(--navy-2)' }}>{pp.topicsTitle}</h3>
                 <div className="prelim-topic-tags">
-                  {TOPIC_TAGS.map(t => (
+                  {topicTags.map((t: string) => (
                     <span key={t} className="prelim-topic-tag">{t}</span>
                   ))}
                 </div>
@@ -123,20 +128,20 @@ export default async function PreliminaryRoundPage() {
       <section className="mob-only" style={{ paddingTop: 0 }}>
         <div className="container">
           <div className="mob-stat-strip" style={{ marginBottom: 18 }}>
-            {KEY_INFO.map(([icon, k, v]) => (
-              <div key={k} className="mob-stat-pill wide">
+            {keyInfo.map(({ icon, label, value }: any) => (
+              <div key={label} className="mob-stat-pill wide">
                 <div className="mob-stat-pill-icon">{icon}</div>
-                <b>{v}</b>
-                <span>{k}</span>
+                <b>{value}</b>
+                <span>{label}</span>
               </div>
             ))}
           </div>
           <div className="panel mob-info-panel">
             <h3>🗺️ How it works</h3>
             <div className="mob-stepper">
-              {STEPS.map(({ n, title, text }) => (
-                <div key={n} className="mob-stepper-item">
-                  <div className="mob-stepper-node">{Number(n)}</div>
+              {steps.map(({ number, title, text }: any) => (
+                <div key={number} className="mob-stepper-item">
+                  <div className="mob-stepper-node">{Number(number)}</div>
                   <div className="mob-stepper-body">
                     <strong>{title}</strong>
                     <p>{text}</p>
@@ -146,9 +151,9 @@ export default async function PreliminaryRoundPage() {
             </div>
           </div>
           <div className="panel mob-info-panel">
-            <h3>🎯 Topics tested</h3>
+            <h3>{pp.topicsTitle}</h3>
             <div className="prelim-topic-tags">
-              {TOPIC_TAGS.map(t => (
+              {topicTags.map((t: string) => (
                 <span key={t} className="prelim-topic-tag">{t}</span>
               ))}
             </div>
@@ -160,8 +165,8 @@ export default async function PreliminaryRoundPage() {
       <section id="sample-questions" className="prelim-resource-section section-soft">
         <div className="container">
           <div className="prelim-section-head">
-            <h2>Nümunə suallar</h2>
-            <p>Valideyn və şagird müvafiq mərhələni, sonra kateqoriyanı seçərək PDF nümunələrini açıb yükləyə bilər.</p>
+            <h2>{pp.sampleQuestionsTitle}</h2>
+            <p>{pp.sampleQuestionsText}</p>
           </div>
           <div className="panel" style={{ padding: 16 }}>
             <ResourceAccordion groups={sampleGroups} />
@@ -173,8 +178,8 @@ export default async function PreliminaryRoundPage() {
       <section id="syllabus" className="prelim-resource-section">
         <div className="container">
           <div className="prelim-section-head">
-            <h2>Sillabus</h2>
-            <p>Hər mərhələ üzrə kateqoriya açılır və uyğun sillabus PDF-i yüklənir.</p>
+            <h2>{pp.syllabusTitle}</h2>
+            <p>{pp.syllabusText}</p>
           </div>
           <div className="panel" style={{ padding: 16 }}>
             <ResourceAccordion groups={syllabusGroups} />
@@ -186,8 +191,8 @@ export default async function PreliminaryRoundPage() {
       <section id="results" className="prelim-resource-section section-soft">
         <div className="container">
           <div className="prelim-section-head">
-            <h2>Nəticələr</h2>
-            <p>Bu bölmə yalnız Preliminary Round nəticələri üçündür. İstifadəçi ölkə adına klikləyərək həmin ölkəyə aid PDF nəticəni yükləyə bilər.</p>
+            <h2>{pp.resultsTitle}</h2>
+            <p>{pp.resultsText}</p>
           </div>
           <div className="panel" style={{ padding: 16 }}>
             <ResultAccordion groups={resultGroups} />
