@@ -78,7 +78,7 @@ Seed scripts (idempotent, run from `directus-cms/`):
 ```bash
 node seed/01-collections.mjs
 node seed/02-seed.mjs
-# ... through 15-admin-nav-folders.mjs
+# ... through 16-azerbaijani-locale.mjs
 ```
 
 ---
