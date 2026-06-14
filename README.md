@@ -81,6 +81,15 @@ node seed/02-seed.mjs
 # ... through 16-azerbaijani-locale.mjs
 ```
 
+### Azerbaijani admin app
+
+The Directus 12 admin app ships an `az-AZ` translation pack but never registers
+`az-AZ` in its list of available app languages, so the app silently refuses to
+load it. `directus-cms/patches/@directus+app+16.1.0.patch` (applied
+automatically via `npm install` / `postinstall`) adds `az-AZ` to that list so
+the admin UI actually renders in Azerbaijani for users with `language: az-AZ`
+(set by `seed/16-azerbaijani-locale.mjs`).
+
 ---
 
 ## Environment variables
